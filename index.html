@@ -415,6 +415,10 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+        
+        #tokenGroup {
+            display: none;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
 </head>
@@ -444,28 +448,13 @@
             <div class="sidebar">
                 <div class="sidebar-content">
                     <div class="config-section">
-                        <h3>GitHub配置</h3>
-                        <div class="form-group">
-                            <label for="repoUrl">仓库地址</label>
-                            <input type="text" id="repoUrl" placeholder="例如: https://raw.githubusercontent.com/username/repo/main/bookmarks.json">
-                        </div>
-                        <div class="form-group" id="tokenGroup" style="display: none;">
-                            <label for="token">访问Token (可选)</label>
-                            <input type="password" id="token" placeholder="GitHub Personal Access Token">
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-primary" id="loadBtn">
-                                <i class="fa fa-download"></i> 加载书签
-                            </button>
-                            <button class="btn btn-default" id="toggleTokenBtn">需要Token?</button>
-                        </div>
-                    </div>
-                    
-                    <div class="config-section">
                         <h3>操作</h3>
                         <div class="btn-group">
                             <button class="btn btn-success" id="saveBtn">
                                 <i class="fa fa-save"></i> 保存到本地
+                            </button>
+                            <button class="btn btn-info" id="refreshBtn">
+                                <i class="fa fa-refresh"></i> 刷新书签
                             </button>
                             <button class="btn btn-info" id="addFolderBtn">
                                 <i class="fa fa-folder"></i> 添加文件夹
@@ -520,14 +509,23 @@
                 <h2><i class="fa fa-cog"></i> 设置</h2>
                 <div class="settings-form">
                     <div class="form-group">
-                        <label for="settingsRepoUrl">GitHub仓库地址</label>
-                        <input type="text" id="settingsRepoUrl" placeholder="例如: https://raw.githubusercontent.com/username/repo/main/bookmarks.json">
+                        <label for="githubUsername">GitHub用户名</label>
+                        <input type="text" id="githubUsername" placeholder="例如: munanshang">
                     </div>
                     <div class="form-group">
+                        <label for="githubRepo">仓库名</label>
+                        <input type="text" id="githubRepo" placeholder="例如: bookmark">
+                    </div>
+                    <div class="form-group">
+                        <label for="githubFilePath">文件路径 (可选)</label>
+                        <input type="text" id="githubFilePath" placeholder="例如: bookmarks.json (默认)">
+                    </div>
+                    <div class="form-group" id="tokenGroup">
                         <label for="settingsToken">访问Token (可选)</label>
                         <input type="password" id="settingsToken" placeholder="GitHub Personal Access Token">
                     </div>
                     <div class="btn-group">
+                        <button class="btn btn-default" id="toggleTokenBtn">需要Token?</button>
                         <button class="btn btn-primary" id="saveSettingsBtn">
                             <i class="fa fa-save"></i> 保存设置
                         </button>
@@ -547,18 +545,15 @@
         let selectedNode = null;
         let selectedParent = null;
         let currentTab = 'main';
+        let appConfig = {
+            username: '',
+            repo: '',
+            filePath: 'bookmarks.json',
+            token: ''
+        };
         
         // DOM元素
         const elements = {
-            repoUrl: document.getElementById('repoUrl'),
-            token: document.getElementById('token'),
-            tokenGroup: document.getElementById('tokenGroup'),
-            toggleTokenBtn: document.getElementById('toggleTokenBtn'),
-            loadBtn: document.getElementById('loadBtn'),
-            saveBtn: document.getElementById('saveBtn'),
-            addFolderBtn: document.getElementById('addFolderBtn'),
-            addBookmarkBtn: document.getElementById('addBookmarkBtn'),
-            searchInput: document.getElementById('searchInput'),
             bookmarkTree: document.getElementById('bookmarkTree'),
             editorArea: document.getElementById('editorArea'),
             editorTitle: document.getElementById('editorTitle'),
@@ -566,9 +561,18 @@
             statusBar: document.getElementById('statusBar'),
             mainContainer: document.getElementById('mainContainer'),
             settingsContainer: document.getElementById('settingsContainer'),
-            settingsRepoUrl: document.getElementById('settingsRepoUrl'),
+            githubUsername: document.getElementById('githubUsername'),
+            githubRepo: document.getElementById('githubRepo'),
+            githubFilePath: document.getElementById('githubFilePath'),
             settingsToken: document.getElementById('settingsToken'),
-            saveSettingsBtn: document.getElementById('saveSettingsBtn')
+            saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            refreshBtn: document.getElementById('refreshBtn'),
+            addFolderBtn: document.getElementById('addFolderBtn'),
+            addBookmarkBtn: document.getElementById('addBookmarkBtn'),
+            searchInput: document.getElementById('searchInput'),
+            toggleTokenBtn: document.getElementById('toggleTokenBtn'),
+            tokenGroup: document.getElementById('tokenGroup')
         };
         
         // 窗口控制按钮
@@ -606,11 +610,21 @@
             });
         });
         
+        // 切换Token输入框显示
+        elements.toggleTokenBtn.addEventListener('click', () => {
+            const isHidden = elements.tokenGroup.style.display === 'none';
+            elements.tokenGroup.style.display = isHidden ? 'block' : 'none';
+            elements.toggleTokenBtn.textContent = isHidden ? '隐藏Token' : '需要Token?';
+        });
+        
         // 加载设置
         async function loadSettings() {
             try {
-                const config = await window.electron.ipcRenderer.invoke('get-config');
-                elements.settingsRepoUrl.value = config.repoUrl || '';
+                const config = await window.electronAPI.getConfig();
+                appConfig = config;
+                elements.githubUsername.value = config.username || '';
+                elements.githubRepo.value = config.repo || '';
+                elements.githubFilePath.value = config.filePath || 'bookmarks.json';
                 elements.settingsToken.value = config.token || '';
             } catch (error) {
                 console.error('加载设置失败:', error);
@@ -618,23 +632,33 @@
         }
         
         // 保存设置
-        document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+        elements.saveSettingsBtn.addEventListener('click', async () => {
             try {
                 const config = {
-                    repoUrl: elements.settingsRepoUrl.value.trim(),
+                    username: elements.githubUsername.value.trim(),
+                    repo: elements.githubRepo.value.trim(),
+                    filePath: elements.githubFilePath.value.trim() || 'bookmarks.json',
                     token: elements.settingsToken.value.trim()
                 };
                 
-                await window.electron.ipcRenderer.invoke('save-config', config);
+                const result = await window.electronAPI.saveConfig(config);
                 
-                // 同时更新主界面的配置
-                elements.repoUrl.value = config.repoUrl;
-                elements.token.value = config.token;
-                
-                showStatus('设置已保存');
+                if (result.success) {
+                    appConfig = config;
+                    showStatus('设置已保存');
+                    // 保存配置后自动刷新书签
+                    loadBookmarks();
+                } else {
+                    showStatus('保存设置失败: ' + result.error, true);
+                }
             } catch (error) {
                 showStatus('保存设置失败: ' + error.message, true);
             }
+        });
+        
+        // 刷新书签
+        elements.refreshBtn.addEventListener('click', () => {
+            loadBookmarks();
         });
         
         // 生成唯一ID
@@ -983,77 +1007,146 @@
         
         // 从GitHub加载书签
         async function loadBookmarks() {
-            const repoUrl = elements.repoUrl.value.trim();
-            const token = elements.token.value.trim();
-            
-            if (!repoUrl) {
-                showStatus('请填写仓库地址', true);
+            if (!appConfig.username || !appConfig.repo) {
+                showStatus('请先在设置页面配置GitHub用户名和仓库名', true);
+                // 切换到设置页面
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelector('.nav-tab[data-tab="settings"]').classList.add('active');
+                elements.mainContainer.classList.add('hidden');
+                elements.settingsContainer.classList.remove('hidden');
+                currentTab = 'settings';
+                loadSettings();
                 return;
             }
             
             try {
                 showStatus('正在加载书签数据...');
                 
+                // 构造GitHub原始文件URL
+                const rawUrl = `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/main/${appConfig.filePath}`;
+                
                 // 构造请求头
                 const headers = {
                     'Content-Type': 'application/json'
                 };
                 
-                if (token) {
-                    headers['Authorization'] = `token ${token}`;
+                if (appConfig.token) {
+                    headers['Authorization'] = `token ${appConfig.token}`;
                 }
                 
                 // 发送请求
-                const response = await fetch(repoUrl, { headers });
+                let response = await fetch(rawUrl, { headers });
                 
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        // 初始化默认数据
-                        bookmarksData = {
-                            "version": "1.0",
-                            "roots": {
-                                "bookmark_bar": {
-                                    "id": "root_1",
-                                    "name": "书签栏",
-                                    "type": "folder",
-                                    "createdAt": getIsoTimestamp(),
-                                    "updatedAt": getIsoTimestamp(),
-                                    "children": []
-                                },
-                                "other_bookmarks": {
-                                    "id": "root_2",
-                                    "name": "其他书签",
-                                    "type": "folder",
-                                    "createdAt": getIsoTimestamp(),
-                                    "updatedAt": getIsoTimestamp(),
-                                    "children": []
+                // 如果指定了文件路径但返回404，则尝试常见的默认路径
+                if (!response.ok && response.status === 404 && appConfig.filePath !== 'bookmarks.json') {
+                    showStatus('指定文件路径未找到，尝试默认路径...');
+                    const defaultUrls = [
+                        `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/main/bookmarks.json`,
+                        `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/master/bookmarks.json`,
+                        `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/main/bookmark.json`,
+                        `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/master/bookmark.json`
+                    ];
+                    
+                    for (const url of defaultUrls) {
+                        try {
+                            const tryResponse = await fetch(url, { headers });
+                            if (tryResponse.ok) {
+                                const contentType = tryResponse.headers.get('content-type');
+                                if (contentType && (contentType.includes('application/json') || contentType.includes('text/plain'))) {
+                                    response = tryResponse;
+                                    break;
                                 }
                             }
-                        };
-                        showStatus('未找到书签文件，已初始化新的书签数据');
-                        renderBookmarkTree();
-                        return;
+                        } catch (e) {
+                            continue;
+                        }
                     }
-                    throw new Error(`HTTP错误：${response.status} ${response.statusText}`);
+                }
+                
+                // 如果还是404，尝试master分支
+                if (!response.ok && response.status === 404) {
+                    const masterUrl = `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/master/${appConfig.filePath}`;
+                    const masterResponse = await fetch(masterUrl, { headers });
+                    
+                    if (masterResponse.ok) {
+                        response = masterResponse;
+                    } else {
+                        // 尝试master分支的默认路径
+                        const masterDefaultUrls = [
+                            `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/master/bookmarks.json`,
+                            `https://raw.githubusercontent.com/${appConfig.username}/${appConfig.repo}/master/bookmark.json`
+                        ];
+                        
+                        for (const url of masterDefaultUrls) {
+                            try {
+                                const tryResponse = await fetch(url, { headers });
+                                if (tryResponse.ok) {
+                                    const contentType = tryResponse.headers.get('content-type');
+                                    if (contentType && (contentType.includes('application/json') || contentType.includes('text/plain'))) {
+                                        response = tryResponse;
+                                        break;
+                                    }
+                                }
+                            } catch (e) {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                
+                // 如果仍然没有找到有效响应
+                if (!response.ok) {
+                    // 初始化默认数据
+                    bookmarksData = {
+                        "version": "1.0",
+                        "roots": {
+                            "bookmark_bar": {
+                                "id": "root_1",
+                                "name": "书签栏",
+                                "type": "folder",
+                                "createdAt": getIsoTimestamp(),
+                                "updatedAt": getIsoTimestamp(),
+                                "children": []
+                            },
+                            "other_bookmarks": {
+                                "id": "root_2",
+                                "name": "其他书签",
+                                "type": "folder",
+                                "createdAt": getIsoTimestamp(),
+                                "updatedAt": getIsoTimestamp(),
+                                "children": []
+                            }
+                        }
+                    };
+                    showStatus('未找到书签文件，已初始化新的书签数据');
+                    renderBookmarkTree();
+                    return;
                 }
                 
                 // 检查响应的内容类型
                 const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    if (!text.trim()) {
-                        throw new Error('服务器返回空内容');
-                    }
-                    throw new Error(`服务器返回非JSON内容: ${contentType || '未知类型'}`);
+                let text = '';
+                
+                try {
+                    text = await response.text();
+                } catch (textError) {
+                    throw new Error('无法读取响应内容');
                 }
                 
-                // 获取响应文本，先检查是否为有效的JSON
-                const text = await response.text();
                 if (!text.trim()) {
                     throw new Error('服务器返回空内容');
                 }
                 
-                bookmarksData = JSON.parse(text);
+                // 尝试解析JSON，即使内容类型不是application/json
+                try {
+                    bookmarksData = JSON.parse(text);
+                } catch (parseError) {
+                    // 如果解析失败，检查是否是GitHub的HTML页面
+                    if (contentType && contentType.includes('text/html')) {
+                        throw new Error('请确认输入的是正确的GitHub用户名和仓库名，而不是页面URL');
+                    }
+                    throw new Error('文件内容不是有效的JSON格式: ' + parseError.message);
+                }
                 
                 // 验证解析后的数据结构是否正确
                 if (!bookmarksData || typeof bookmarksData !== 'object') {
@@ -1131,22 +1224,14 @@
             }
         }
         
-        // 切换Token输入框显示
-        function toggleTokenInput() {
-            const isHidden = elements.tokenGroup.style.display === 'none';
-            elements.tokenGroup.style.display = isHidden ? 'block' : 'none';
-            elements.toggleTokenBtn.textContent = isHidden ? '隐藏Token' : '需要Token?';
-        }
-        
         // 事件绑定
         document.addEventListener('DOMContentLoaded', () => {
             // 按钮事件
-            elements.loadBtn.addEventListener('click', loadBookmarks);
             elements.saveBtn.addEventListener('click', saveBookmarks);
+            elements.refreshBtn.addEventListener('click', () => loadBookmarks());
             elements.addFolderBtn.addEventListener('click', () => addNewNode('folder'));
             elements.addBookmarkBtn.addEventListener('click', () => addNewNode('bookmark'));
             elements.deleteBtn.addEventListener('click', deleteSelectedNode);
-            elements.toggleTokenBtn.addEventListener('click', toggleTokenInput);
             
             // 搜索事件
             elements.searchInput.addEventListener('input', (e) => {
@@ -1158,20 +1243,23 @@
                 }
             });
             
-            // 页面加载时加载配置
-            loadConfig();
+            // 页面加载时加载配置并自动加载书签
+            loadSettings().then(() => {
+                // 检查是否已配置GitHub信息
+                if (appConfig.username && appConfig.repo) {
+                    // 如果已配置，自动加载书签
+                    loadBookmarks();
+                } else {
+                    // 如果未配置，自动切换到设置页面
+                    showStatus('请先配置GitHub信息');
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-tab="settings"]').classList.add('active');
+                    elements.mainContainer.classList.add('hidden');
+                    elements.settingsContainer.classList.remove('hidden');
+                    currentTab = 'settings';
+                }
+            });
         });
-        
-        // 加载配置
-        async function loadConfig() {
-            try {
-                const config = await window.electron.ipcRenderer.invoke('get-config');
-                elements.repoUrl.value = config.repoUrl || '';
-                elements.token.value = config.token || '';
-            } catch (error) {
-                console.error('加载配置失败:', error);
-            }
-        }
         
         // 搜索书签
         function searchBookmarks(query) {
@@ -1256,76 +1344,6 @@
                 
                 elements.bookmarkTree.appendChild(resultsContainer);
             }
-        }
-        
-        // 设置Electron API
-        // 已通过preload.js暴露到window.electronAPI
-        
-        // 在渲染进程中创建一个模拟的ipcRenderer（在实际Electron环境中会被真实的ipcRenderer替换）
-        // 注意：在实际Electron应用中，这部分代码不会执行，因为window.electronAPI已经通过preload.js定义
-        if (!window.electronAPI) {
-            window.electronAPI = {
-                readBookmarks: (url) => {
-                    return new Promise((resolve) => {
-                        // 模拟IPC调用
-                        setTimeout(async () => {
-                            try {
-                                const response = await fetch(url);
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                const data = await response.json();
-                                resolve({ success: true, data });
-                            } catch (error) {
-                                resolve({ success: false, error: error.message });
-                            }
-                        }, 100);
-                    });
-                },
-                saveBookmarks: (data) => {
-                    return new Promise((resolve) => {
-                        try {
-                            // 创建一个Blob并触发下载
-                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'bookmarks.json';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                            resolve({ success: true, filePath: 'downloads/bookmarks.json' });
-                        } catch (error) {
-                            resolve({ success: false, error: error.message });
-                        }
-                    });
-                },
-                quitApp: () => {
-                    console.log('退出应用');
-                },
-                minimizeWindow: () => {
-                    console.log('最小化窗口');
-                },
-                maximizeWindow: () => {
-                    console.log('最大化窗口');
-                },
-                getConfig: () => {
-                    return new Promise((resolve) => {
-                        resolve({
-                            repoUrl: localStorage.getItem('repoUrl') || '',
-                            token: localStorage.getItem('token') || ''
-                        });
-                    });
-                },
-                saveConfig: (config) => {
-                    return new Promise((resolve) => {
-                        localStorage.setItem('repoUrl', config.repoUrl || '');
-                        localStorage.setItem('token', config.token || '');
-                        resolve({ success: true });
-                    });
-                }
-            };
         }
     </script>
 </body>

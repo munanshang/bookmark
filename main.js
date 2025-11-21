@@ -10,13 +10,16 @@ function readConfig() {
   try {
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8');
-      return JSON.parse(data);
+      const config = JSON.parse(data);
+      return config;
     }
   } catch (error) {
     console.error('读取配置失败:', error);
   }
   return {
-    repoUrl: '',
+    username: '',
+    repo: '',
+    filePath: 'bookmarks.json',
     token: ''
   };
 }
@@ -24,7 +27,21 @@ function readConfig() {
 // 保存配置
 function saveConfig(config) {
   try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    // 确保目录存在
+    const userDataPath = app.getPath('userData');
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+    }
+    
+    // 确保配置对象有所有必需的属性
+    const fullConfig = {
+      username: config.username || '',
+      repo: config.repo || '',
+      filePath: config.filePath || 'bookmarks.json',
+      token: config.token || ''
+    };
+    
+    fs.writeFileSync(configPath, JSON.stringify(fullConfig, null, 2));
     return { success: true };
   } catch (error) {
     console.error('保存配置失败:', error);

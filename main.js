@@ -1,10 +1,36 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const Store = require('electron-store');
 
-// 初始化配置存储
-const store = new Store();
+// 配置文件路径
+const configPath = path.join(app.getPath('userData'), 'config.json');
+
+// 读取配置
+function readConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('读取配置失败:', error);
+  }
+  return {
+    repoUrl: '',
+    token: ''
+  };
+}
+
+// 保存配置
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    return { success: true };
+  } catch (error) {
+    console.error('保存配置失败:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 // 创建浏览器窗口
 function createWindow() {
@@ -92,14 +118,10 @@ ipcMain.handle('maximize-window', async (event) => {
 
 // 获取配置
 ipcMain.handle('get-config', async () => {
-  return store.get('github-config', {
-    repoUrl: '',
-    token: ''
-  });
+  return readConfig();
 });
 
 // 保存配置
 ipcMain.handle('save-config', async (event, config) => {
-  store.set('github-config', config);
-  return { success: true };
+  return saveConfig(config);
 });

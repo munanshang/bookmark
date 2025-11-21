@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "roots": {
+    "bookmark_bar": {
+      "id": "root_1",
+      "name": "书签栏",
+      "type": "folder",
+      "createdAt": "2023-10-01T08:00:00Z",
+      "updatedAt": "2023-10-01T08:00:00Z",
+      "children": [
+        {
+          "id": "bookmark_1",
+          "name": "GitHub",
+          "type": "bookmark",
+          "url": "https://github.com",
+          "favicon": "https://github.com/favicon.ico",
+          "tags": [
+            "开发",
+            "代码"
+          ],
+          "createdAt": "2023-10-01T08:30:00Z",
+          "updatedAt": "2023-10-01T08:30:00Z"
+        },
+        {
+          "id": "folder_1",
+          "name": "前端资源",
+          "type": "folder",
+          "createdAt": "2023-10-01T09:00:00Z",
+          "updatedAt": "2023-10-01T09:00:00Z",
+          "children": [
+            {
+              "id": "bookmark_2",
+              "name": "MDN文档",
+              "type": "bookmark",
+              "url": "https://developer.mozilla.org",
+              "tags": [
+                "前端",
+                "文档"
+              ],
+              "createdAt": "2023-10-01T09:10:00Z",
+              "updatedAt": "2023-10-01T09:10:00Z"
+            }
+          ]
+        }
+      ]
+    },
+    "other_bookmarks": {
+      "id": "root_2",
+      "name": "其他书签",
+      "type": "folder",
+      "createdAt": "2023-10-01T08:00:00Z",
+      "updatedAt": "2023-10-01T08:00:00Z",
+      "children": []
+    }
+  }
+}

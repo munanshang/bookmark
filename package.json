@@ -19,7 +19,6 @@
     "electron": "^21.0.0"
   },
   "dependencies": {
-    "electron-store": "^8.1.0",
     "naive-ui": "^2.34.0"
   }
 }

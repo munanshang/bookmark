@@ -573,15 +573,15 @@
         
         // 窗口控制按钮
         document.getElementById('minimizeBtn').addEventListener('click', () => {
-            window.electron.ipcRenderer.invoke('minimize-window');
+            window.electronAPI.minimizeWindow();
         });
         
         document.getElementById('maximizeBtn').addEventListener('click', () => {
-            window.electron.ipcRenderer.invoke('maximize-window');
+            window.electronAPI.maximizeWindow();
         });
         
         document.getElementById('closeBtn').addEventListener('click', () => {
-            window.electron.ipcRenderer.invoke('quit-app');
+            window.electronAPI.quitApp();
         });
         
         // 标签页切换

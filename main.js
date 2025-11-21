@@ -42,9 +42,9 @@ function createWindow() {
     height: Math.min(800, height * 0.8),
     frame: false, // 无边框窗口
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 

@@ -1259,35 +1259,74 @@
         }
         
         // 设置Electron API
-        window.electron = {
-            ipcRenderer: {
-                invoke: async (channel, ...args) => {
-                    // 在Electron环境中，这些会被真实的IPC方法替换
-                    if (channel === 'quit-app') {
-                        // 模拟退出应用
-                        console.log('退出应用');
-                    } else if (channel === 'get-config') {
-                        // 模拟获取配置
-                        return {
+        // 已通过preload.js暴露到window.electronAPI
+        
+        // 在渲染进程中创建一个模拟的ipcRenderer（在实际Electron环境中会被真实的ipcRenderer替换）
+        // 注意：在实际Electron应用中，这部分代码不会执行，因为window.electronAPI已经通过preload.js定义
+        if (!window.electronAPI) {
+            window.electronAPI = {
+                readBookmarks: (url) => {
+                    return new Promise((resolve) => {
+                        // 模拟IPC调用
+                        setTimeout(async () => {
+                            try {
+                                const response = await fetch(url);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                const data = await response.json();
+                                resolve({ success: true, data });
+                            } catch (error) {
+                                resolve({ success: false, error: error.message });
+                            }
+                        }, 100);
+                    });
+                },
+                saveBookmarks: (data) => {
+                    return new Promise((resolve) => {
+                        try {
+                            // 创建一个Blob并触发下载
+                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'bookmarks.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            resolve({ success: true, filePath: 'downloads/bookmarks.json' });
+                        } catch (error) {
+                            resolve({ success: false, error: error.message });
+                        }
+                    });
+                },
+                quitApp: () => {
+                    console.log('退出应用');
+                },
+                minimizeWindow: () => {
+                    console.log('最小化窗口');
+                },
+                maximizeWindow: () => {
+                    console.log('最大化窗口');
+                },
+                getConfig: () => {
+                    return new Promise((resolve) => {
+                        resolve({
                             repoUrl: localStorage.getItem('repoUrl') || '',
                             token: localStorage.getItem('token') || ''
-                        };
-                    } else if (channel === 'save-config') {
-                        // 模拟保存配置
-                        const config = args[0];
+                        });
+                    });
+                },
+                saveConfig: (config) => {
+                    return new Promise((resolve) => {
                         localStorage.setItem('repoUrl', config.repoUrl || '');
                         localStorage.setItem('token', config.token || '');
-                        return { success: true };
-                    } else if (channel === 'minimize-window') {
-                        // 模拟最小化窗口
-                        console.log('最小化窗口');
-                    } else if (channel === 'maximize-window') {
-                        // 模拟最大化窗口
-                        console.log('最大化窗口');
-                    }
+                        resolve({ success: true });
+                    });
                 }
-            }
-        };
+            };
+        }
     </script>
 </body>
 </html>

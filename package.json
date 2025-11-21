@@ -1,0 +1,25 @@
+{
+  "name": "bookmark-manager",
+  "version": "1.0.0",
+  "description": "书签云管理工具",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "bookmark",
+    "manager",
+    "electron"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^21.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "naive-ui": "^2.34.0"
+  }
+}

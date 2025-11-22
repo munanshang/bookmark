@@ -41,6 +41,76 @@
               "updatedAt": "2023-10-01T09:10:00Z"
             }
           ]
+        },
+        {
+          "id": "folder_2",
+          "name": "开发工具",
+          "type": "folder",
+          "createdAt": "2023-10-01T10:00:00Z",
+          "updatedAt": "2023-10-01T10:00:00Z",
+          "children": [
+            {
+              "id": "bookmark_3",
+              "name": "Stack Overflow",
+              "type": "bookmark",
+              "url": "https://stackoverflow.com",
+              "favicon": "https://stackoverflow.com/favicon.ico",
+              "tags": [
+                "编程",
+                "问答"
+              ],
+              "createdAt": "2023-10-01T10:10:00Z",
+              "updatedAt": "2023-10-01T10:10:00Z"
+            },
+            {
+              "id": "bookmark_4",
+              "name": "npm",
+              "type": "bookmark",
+              "url": "https://www.npmjs.com",
+              "favicon": "https://www.npmjs.com/favicon.ico",
+              "tags": [
+                "包管理",
+                "JavaScript"
+              ],
+              "createdAt": "2023-10-01T10:20:00Z",
+              "updatedAt": "2023-10-01T10:20:00Z"
+            }
+          ]
+        },
+        {
+          "id": "folder_3",
+          "name": "学习资源",
+          "type": "folder",
+          "createdAt": "2023-10-01T11:00:00Z",
+          "updatedAt": "2023-10-01T11:00:00Z",
+          "children": [
+            {
+              "id": "bookmark_5",
+              "name": "LeetCode",
+              "type": "bookmark",
+              "url": "https://leetcode.com",
+              "favicon": "https://leetcode.com/favicon.ico",
+              "tags": [
+                "算法",
+                "练习"
+              ],
+              "createdAt": "2023-10-01T11:10:00Z",
+              "updatedAt": "2023-10-01T11:10:00Z"
+            },
+            {
+              "id": "bookmark_6",
+              "name": "菜鸟教程",
+              "type": "bookmark",
+              "url": "https://www.runoob.com",
+              "favicon": "https://www.runoob.com/favicon.ico",
+              "tags": [
+                "教程",
+                "入门"
+              ],
+              "createdAt": "2023-10-01T11:20:00Z",
+              "updatedAt": "2023-10-01T11:20:00Z"
+            }
+          ]
         }
       ]
     },
@@ -50,7 +120,78 @@
       "type": "folder",
       "createdAt": "2023-10-01T08:00:00Z",
       "updatedAt": "2023-10-01T08:00:00Z",
-      "children": []
+      "children": [
+        {
+          "id": "folder_4",
+          "name": "设计资源",
+          "type": "folder",
+          "createdAt": "2023-10-01T12:00:00Z",
+          "updatedAt": "2023-10-01T12:00:00Z",
+          "children": [
+            {
+              "id": "bookmark_7",
+              "name": "Figma",
+              "type": "bookmark",
+              "url": "https://www.figma.com",
+              "favicon": "https://www.figma.com/favicon.ico",
+              "tags": [
+                "设计",
+                "协作"
+              ],
+              "createdAt": "2023-10-01T12:10:00Z",
+              "updatedAt": "2023-10-01T12:10:00Z"
+            },
+            {
+              "id": "bookmark_8",
+              "name": "Dribbble",
+              "type": "bookmark",
+              "url": "https://dribbble.com",
+              "favicon": "https://dribbble.com/favicon.ico",
+              "tags": [
+                "设计灵感",
+                "作品展示"
+              ],
+              "createdAt": "2023-10-01T12:20:00Z",
+              "updatedAt": "2023-10-01T12:20:00Z"
+            }
+          ]
+        },
+        {
+          "id": "folder_5",
+          "name": "技术博客",
+          "type": "folder",
+          "createdAt": "2023-10-01T13:00:00Z",
+          "updatedAt": "2023-10-01T13:00:00Z",
+          "children": [
+            {
+              "id": "bookmark_9",
+              "name": "掘金",
+              "type": "bookmark",
+              "url": "https://juejin.cn",
+              "favicon": "https://juejin.cn/favicon.ico",
+              "tags": [
+                "技术社区",
+                "中文"
+              ],
+              "createdAt": "2023-10-01T13:10:00Z",
+              "updatedAt": "2023-10-01T13:10:00Z"
+            },
+            {
+              "id": "bookmark_10",
+              "name": "CSDN",
+              "type": "bookmark",
+              "url": "https://www.csdn.net",
+              "favicon": "https://www.csdn.net/favicon.ico",
+              "tags": [
+                "技术博客",
+                "中文"
+              ],
+              "createdAt": "2023-10-01T13:20:00Z",
+              "updatedAt": "2023-10-01T13:20:00Z"
+            }
+          ]
+        }
+      ]
     }
   }
 }
